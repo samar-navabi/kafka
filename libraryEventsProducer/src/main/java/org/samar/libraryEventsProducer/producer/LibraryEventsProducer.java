@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
+import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
+import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.samar.libraryEventsProducer.record.LibraryEvents;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -58,10 +60,8 @@ public class LibraryEventsProducer
     {
         var key = libraryEvents.libraryEventId();
         var value = objectMapper.writeValueAsString(libraryEvents);
-
-        ProducerRecord<Integer, String> producerRecord = buildProducerRecord(key,value,topic);
+        ProducerRecord<Integer, String> producerRecord = buildRecord(key, value, topic);
         var completableFuture =  kafkaTemplate.send(producerRecord);
-
         return completableFuture
                 .whenComplete((sendResult, throwable) -> {
                     if(throwable != null)
@@ -85,10 +85,10 @@ public class LibraryEventsProducer
         log.error("Error sending the message and the exception is {}", ex.getMessage(), ex);
     }
 
-    public ProducerRecord<Integer, String> buildProducerRecord(Integer key, String value, String topic)
+    public ProducerRecord<Integer, String> buildRecord(Integer key, String value, String topic)
     {
         List<Header> headers = List.of(new RecordHeader("event-source", "scanner".getBytes()));
-        return new ProducerRecord<>(topic, null, key , value);
+        return new ProducerRecord<>(topic, null, key, value);
     }
 
 }
