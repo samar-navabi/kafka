@@ -19,7 +19,8 @@ public class LibraryEventService
 
         //System.out.println(libraryEvent.toString());
         //return null;
-        producer.sendLibraryEvents2(libraryEvent);
+        //producer.sendLibraryEvents2(libraryEvent);
+        producer.sendLibraryEventsSynchronous(libraryEvent);
         System.out.println("This is the end of the message!");
         return new ResponseEntity<>(libraryEvent, HttpStatus.CREATED);
     }

@@ -8,6 +8,7 @@ import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.Headers;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.apache.kafka.common.header.internals.RecordHeaders;
+import org.hibernate.validator.internal.constraintvalidators.bv.NotNullValidator;
 import org.samar.libraryEventsProducer.record.LibraryEvents;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -17,11 +18,14 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @Slf4j
 public class LibraryEventsProducer
 {
+
     @Value("${spring.kafka.topic}")
     private String topic;
 
@@ -32,6 +36,7 @@ public class LibraryEventsProducer
     {
         this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = new ObjectMapper();
+
     }
 
 
@@ -72,6 +77,27 @@ public class LibraryEventsProducer
                         successCase(key, value, sendResult);
                     }
                 });
+    }
+
+    //Synchronous Producer
+    public SendResult<Integer, String> sendLibraryEventsSynchronous(LibraryEvents libraryEvents) throws JsonProcessingException
+    {
+        SendResult<Integer, String> sendResult = null;
+        var key = libraryEvents.libraryEventId();
+        var value = objectMapper.writeValueAsString(libraryEvents);
+
+        try{
+            sendResult = kafkaTemplate.send(topic, key,value).get(2, TimeUnit.SECONDS);
+        }catch(ExecutionException | InterruptedException e)
+        {
+            //e.printStackTrace();
+            log.error("Execution exception or Interrupted exception was triggered. The message: {}", e.getMessage());
+        }catch(Exception e)
+        {
+            //log.error();
+            e.printStackTrace();
+        }
+        return sendResult;
     }
 
 
